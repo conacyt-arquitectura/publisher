@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.kafka.support.SendResult;
 
 @Service
@@ -21,9 +22,14 @@ public class Producer {
     @Autowired
     private KafkaTemplate<String, PersonaFisica> kafkaTemplate;
 
+    @Autowired
+    private KafkaCallback kafkaCallback;
+
     public Optional<RecordMetadata> sendMessage(String topic, PersonaFisica message) {
         logger.info(String.format("-> Productor mensaje : %s", message));
         ListenableFuture<SendResult<String, PersonaFisica>> future = this.kafkaTemplate.send(topic, message);
+        future.addCallback(kafkaCallback);
+    
         try {
             return Optional.of(future.get().getRecordMetadata());
         } catch (InterruptedException | ExecutionException e) {
